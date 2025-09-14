@@ -1,5 +1,7 @@
 import express from 'express';
-import logger from './logger';
+import logger from './logger.js';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+
 
 const app = express();
 
@@ -8,14 +10,14 @@ const services = [
 ];
 
 services.forEach(({ route, target }) => {
-app.use(
-route,
-createProxyMiddleware({
-target,
-changeOrigin: true,
-pathRewrite: { [`^${route}`]: "" },
-})
-);
+    app.use(
+        route,
+        createProxyMiddleware({
+            target,
+            changeOrigin: true,
+            pathRewrite: { [`^${route}`]: "" },
+        })
+    );
 });
 
 app.use((req, res, next) => {
@@ -30,7 +32,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-console.log(`API Gateway running on port ${PORT}`);
+    console.log(`API Gateway running on port ${PORT}`);
 });
 
 const rateLimit = {};
@@ -45,12 +47,12 @@ const ip = req.ip;
 rateLimit[ip] = (rateLimit[ip] || 0) + 1;
 
 if (rateLimit[ip] > MAX_REQUESTS) {
-return res.status(429).json({ error: "Rate limit exceeded" });
+    return res.status(429).json({ error: "Rate limit exceeded" });
 }
 
 req.setTimeout(15000, () => {
-res.status(504).json({ error: "Request timed out" });
-req.abort();
+    res.status(504).json({ error: "Request timed out" });
+    req.abort();
 });
 
 next();
